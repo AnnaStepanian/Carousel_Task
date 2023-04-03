@@ -1,0 +1,8 @@
+<div>
+  <div class="main-image">
+    <img [src]="currentImagesLink" alt="">
+  </div>
+  <ng-container>
+    <app-carousel [items]="imagesLinks" (mainImageChanged)="onMainImageChanged($event)" (slideChanged)="onSlideChanged($event)"></app-carousel>
+  </ng-container>
+</div>

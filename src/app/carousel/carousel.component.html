@@ -1,0 +1,19 @@
+<div class="carousel-container">
+  <div class="visible-items">
+    <div class="arrow" (click)="onPrevClick()" *ngIf="showPrevArrow">
+      <mat-icon>arrow_back</mat-icon>
+    </div>
+    <div class="items-container" *ngIf="visibleItemsCount">
+      <div class="item" *ngFor="let item of currentVisibleItems; let i = index"
+           [class.active]="i === 0">
+        <img [src]="item" (click)="onMainImageClick(item, i)" alt="" [ngClass]="{'active-item': i === activeIndex}">
+      </div>
+    </div>
+    <div class="arrow" (click)="onNextClick()" *ngIf="showNextArrow">
+      <mat-icon>arrow_forward</mat-icon>
+    </div>
+  </div>
+  <div>
+    <p>Visible items count is {{visibleItemsCount}}</p>
+  </div>
+</div>
