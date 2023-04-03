@@ -31,29 +31,21 @@ export class CarouselComponent implements OnInit {
         await sleep()
       }
     }
-    let isMovingToRight = true;
+    let reachedAtEnd = false;
     while (true) {
-      if (isMovingToRight && this.currentIndex + this.visibleItemsCount >= this.items.length) {
-        for (let i = 1; i < this.visibleItemsCount; i += 1) {
+      if (this.currentIndex + this.visibleItemsCount >= this.items.length) {
+        for (let i = 0; i < this.visibleItemsCount; i += 1) {
           this.activeIndex = i;
           this.mainImageChanged.emit(this.items[this.activeIndex + this.currentIndex]);
           await sleep()
         }
-        isMovingToRight = !isMovingToRight;
+        reachedAtEnd = true;
       }
-      if (!isMovingToRight && this.currentIndex === 0) {
-        isMovingToRight = !isMovingToRight;
-        for (let i = this.visibleItemsCount - 2; i > -1; i -= 1) {
-          this.activeIndex = i;
-          this.mainImageChanged.emit(this.items[this.activeIndex + this.currentIndex]);
-          await sleep()
-        }
+
+      if (reachedAtEnd) {
+        break;
       }
-      if (isMovingToRight) {
-        this.onNextClick();
-      } else {
-        this.onPrevClick();
-      }
+      this.onNextClick();
       await sleep()
     }
   }
@@ -62,14 +54,15 @@ export class CarouselComponent implements OnInit {
     this.visibleItemsCount = carouselConfig.visibleItemsCount || 4;
     this.autoslide = carouselConfig.autoslide || false;
     this.loop = carouselConfig.loop || false;
-    if (this.autoslide) {
-      this.runAutoslide();
-    }
   }
 
   ngOnInit(): void {
     this.showPrevArrow = this.loop;
+    this.showNextArrow = this.items.length > this.visibleItemsCount;
     this.currentVisibleItems = this.items.slice(0, this.visibleItemsCount);
+    if (this.autoslide) {
+      this.runAutoslide();
+    }
   }
 
   onMainImageClick(item: string, index: number): void {
@@ -99,6 +92,7 @@ export class CarouselComponent implements OnInit {
 
   onNextClick(): void {
     this.currentIndex += 1;
+    this.showPrevArrow = true;
     if (this.currentIndex < 0) {
       this.handleLoopFromStart();
       return;
@@ -113,22 +107,27 @@ export class CarouselComponent implements OnInit {
       }
       return;
     }
-    this.showPrevArrow = true;
     this.currentVisibleItems = this.items.slice(this.currentIndex, this.currentIndex + this.visibleItemsCount);
-    this.mainImageChanged.emit(this.items[this.currentIndex + this.activeIndex]);
+    let currentActive = this.items[this.currentIndex + this.activeIndex];
+    if (!currentActive) {
+      currentActive = this.items[this.items.length - 1];
+      this.activeIndex = (this.items.length - 1) % this.visibleItemsCount - 1;
+    }
+    this.mainImageChanged.emit(currentActive);
   }
 
   onPrevClick(): void {
     this.currentIndex -= 1;
-    if (this.currentIndex + this.visibleItemsCount >= this.items.length) {
+    this.showNextArrow = true;
+    if (!this.loop && this.currentIndex === 0) {
+      this.showPrevArrow = false;
+    }
+    if (this.loop && this.currentIndex + this.visibleItemsCount >= this.items.length) {
       this.handleLoopFromEnd();
       if (this.currentIndex === this.items.length - this.visibleItemsCount) {
         this.currentIndex = -1;
       }
       return;
-    }
-    if (!this.loop && this.currentIndex === 0) {
-      this.showPrevArrow = false;
     }
     if (this.loop && this.currentIndex < 0 && this.currentIndex > -this.visibleItemsCount) {
       this.handleLoopFromStart();
@@ -138,7 +137,6 @@ export class CarouselComponent implements OnInit {
       this.currentIndex = this.items.length - this.visibleItemsCount;
     }
     this.currentVisibleItems = this.items.slice(this.currentIndex, this.currentIndex + this.visibleItemsCount);
-    this.showNextArrow = true;
     this.mainImageChanged.emit(this.items[this.currentIndex + this.activeIndex]);
   }
 }

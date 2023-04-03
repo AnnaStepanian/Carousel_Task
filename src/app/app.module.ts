@@ -22,8 +22,8 @@ import {CarouselConfigs} from "./carousel/carousel.configs";
       provide: CarouselConfigs,
       useValue: {
         visibleItemsCount: 4,
-        autoslide: false,
-        loop: false,
+        autoslide: true,
+        loop: true,
       },
     },
   ],
