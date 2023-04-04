@@ -21,7 +21,6 @@ export class CarouselComponent implements OnInit {
   showNextArrow: boolean = true;
   showPrevArrow: boolean = false;
   currentVisibleItems: string[] = [];
-  noOfNeededItems: number = 0
 
   async runAutoslide() {
     const time = 3000;
@@ -33,10 +32,9 @@ export class CarouselComponent implements OnInit {
       }
     }
     let reachedAtEnd = false;
-    await sleep()
     while (true) {
-      if (this.currentIndex === this.items.length - this.visibleItemsCount - this.noOfNeededItems) {
-        for (let i = 1; i < this.visibleItemsCount; i += 1) {
+      if (this.currentIndex + this.visibleItemsCount >= this.items.length) {
+        for (let i = 0; i < this.visibleItemsCount; i += 1) {
           this.activeIndex = i;
           this.mainImageChanged.emit(this.items[this.activeIndex + this.currentIndex]);
           await sleep()
@@ -62,7 +60,7 @@ export class CarouselComponent implements OnInit {
     this.showPrevArrow = this.loop;
     this.showNextArrow = this.items.length > this.visibleItemsCount;
     this.noOfNeededItems = this.visibleItemsCount - this.items.length % this.visibleItemsCount;
-    this.items = [...this.items.slice(-this.noOfNeededItems), ...this.items, ...this.items.slice(0, this.visibleItemsCount)]
+    this.items = [...this.items.slice(-this.noOfNeededItems), ...this.items, ...this.items.slice(0, this.noOfNeededItems)]
     this.currentIndex = this.noOfNeededItems;
     this.currentVisibleItems = this.items.slice(this.noOfNeededItems, this.noOfNeededItems + this.visibleItemsCount);
     if (this.autoslide) {
@@ -75,26 +73,55 @@ export class CarouselComponent implements OnInit {
     this.mainImageChanged.emit(item);
   }
 
+  handleLoopFromEnd() {
+    this.currentVisibleItems = this.items.slice(this.currentIndex, this.currentIndex + this.visibleItemsCount);
+    this.currentVisibleItems.push(...this.items.slice(0, (this.currentIndex + this.visibleItemsCount) - this.items.length))
+    if (this.currentIndex + this.activeIndex >= this.items.length) {
+      this.mainImageChanged.emit(this.items[this.currentIndex + this.activeIndex - this.items.length]);
+    } else {
+      this.mainImageChanged.emit(this.items[this.currentIndex + this.activeIndex]);
+    }
+  }
+
+  handleLoopFromStart() {
+    this.currentVisibleItems = this.items.slice(this.currentIndex);
+    this.currentVisibleItems.push(...this.items.slice(0, this.visibleItemsCount + this.currentIndex))
+    if (this.activeIndex < -this.currentIndex) {
+      this.mainImageChanged.emit(this.items[this.items.length + this.currentIndex + this.activeIndex]);
+    } else {
+      this.mainImageChanged.emit(this.items[this.activeIndex + this.currentIndex]);
+    }
+  }
+
   onNextClick(): void {
     this.currentIndex += 1;
     this.showPrevArrow = true;
-    if (this.loop && this.currentIndex === this.items.length - this.visibleItemsCount) {
+    if (this.loop && this.currentIndex === this.items.length - this.noOfNeededItems) {
       this.currentIndex = this.noOfNeededItems;
     }
-    if (!this.loop && this.currentIndex === this.items.length - this.visibleItemsCount - this.noOfNeededItems) {
+    if (!this.loop && this.currentIndex + this.visibleItemsCount >= this.items.length) {
       this.showNextArrow = false;
     }
+    if (this.loop && this.currentIndex + this.visibleItemsCount >= this.items.length) {
+      this.handleLoopFromEnd();
+      if (this.currentIndex === this.items.length - 1) {
+        this.currentIndex = -1;
+      }
+      return;
+    }
     this.currentVisibleItems = this.items.slice(this.currentIndex, this.currentIndex + this.visibleItemsCount);
-    this.mainImageChanged.emit(this.items[this.currentIndex + this.activeIndex]);
+    let currentActive = this.items[this.currentIndex + this.activeIndex];
+    if (!currentActive) {
+      currentActive = this.items[this.items.length - 1];
+      this.activeIndex = (this.items.length - 1) % this.visibleItemsCount - 1;
+    }
+    this.mainImageChanged.emit(currentActive);
   }
 
   onPrevClick(): void {
     this.currentIndex -= 1;
     this.showNextArrow = true;
-    if (this.loop && this.currentIndex === -1) {
-      this.currentIndex = this.items.length - this.visibleItemsCount - this.noOfNeededItems;
-    }
-    if (!this.loop && this.currentIndex === this.noOfNeededItems) {
+    if (!this.loop && this.currentIndex === 0) {
       this.showPrevArrow = false;
     }
     this.currentVisibleItems = this.items.slice(this.currentIndex, this.currentIndex + this.visibleItemsCount);
